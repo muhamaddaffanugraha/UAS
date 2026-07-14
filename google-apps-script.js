@@ -67,7 +67,7 @@ function getSpreadsheet() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
 
-// Initialize database sheets with ONLY default admin account
+// Initialize database sheets
 function initDatabase() {
   var ss = getSpreadsheet();
   
@@ -76,22 +76,6 @@ function initDatabase() {
   if (!usersSheet) {
     usersSheet = ss.insertSheet("Users");
     usersSheet.appendRow(["Username", "Password", "Role", "Name", "Major", "PhotoUrl"]);
-    
-    // Add default admin account
-    usersSheet.appendRow(["admin", "admin123", "adm", "System Administrator", "-", "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"]);
-  } else {
-    // Verify that at least one admin exists
-    var data = usersSheet.getDataRange().getValues();
-    var hasAdmin = false;
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][2] === "adm") {
-        hasAdmin = true;
-        break;
-      }
-    }
-    if (!hasAdmin) {
-      usersSheet.appendRow(["admin", "admin123", "adm", "System Administrator", "-", "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"]);
-    }
   }
   
   // 2. Create Courses Sheet
@@ -108,22 +92,15 @@ function initDatabase() {
     gradesSheet.appendRow(["NIM", "Nama", "Mata Kuliah", "Nilai", "IPK"]);
   }
   
-  return { success: true, message: "Database initialized successfully with default admin account." };
+  return { success: true, message: "Database initialized successfully." };
 }
 
-// User login endpoint with auto-bootstrap for admin
+// User login endpoint
 function login(username, password) {
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName("Users");
   
-  // Bootstrap: If Users sheet doesn't exist, and credentials are admin/admin123,
-  // automatically initialize the sheet tables first.
-  if (!sheet && username.trim().toLowerCase() === "admin" && password === "admin123") {
-    initDatabase();
-    sheet = ss.getSheetByName("Users");
-  }
-  
-  if (!sheet) return { success: false, message: "Database belum diinisialisasi. Silakan masuk menggunakan admin / admin123 terlebih dahulu." };
+  if (!sheet) return { success: false, message: "Database belum diinisialisasi. Silakan jalankan initDatabase terlebih dahulu." };
   
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
@@ -139,21 +116,6 @@ function login(username, password) {
         }
       };
     }
-  }
-  
-  // Safe Fallback: If sheet exists but admin was deleted, auto-recreate it
-  if (username.trim().toLowerCase() === "admin" && password === "admin123") {
-    initDatabase();
-    return {
-      success: true,
-      user: {
-        username: "admin",
-        role: "adm",
-        name: "System Administrator",
-        major: "-",
-        photoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"
-      }
-    };
   }
   
   return { success: false, message: "ID Pengguna atau Kata Sandi salah" };

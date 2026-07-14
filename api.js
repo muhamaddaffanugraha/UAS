@@ -53,21 +53,6 @@ const AcademicAPI = {
   },
 
   async login(username, password) {
-    if (username.trim().toLowerCase() === "admin" && password === "admin123") {
-      // Local verification for Admin to bypass Sheet lookup.
-      // Silently initialize Google Sheets in the background to ensure tables are ready.
-      this.initDatabase().catch(err => console.warn("Auto-initialization warning:", err));
-      return {
-        success: true,
-        user: {
-          username: "admin",
-          role: "adm",
-          name: "System Administrator",
-          major: "-",
-          photoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"
-        }
-      };
-    }
     return await this.call("login", {}, { username, password });
   },
 
