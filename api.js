@@ -4,7 +4,7 @@
  */
 
 // Default hardcoded Google Apps Script Web App URL from your Vercel deployment logs
-const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbw8sokBvT4-fJj8Ca9uUsVVIvohXHRx5MLztRj1E3tL76-aue-E9nSA-Ll4lOeSAuvCpg/exec";
+const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbwqpaqjxWFY5NVdusoDaYJ-9SisJO5MIbtJl6VdDc-a3xjlTyn0fcXsINq0Xy61KDEN/exec";
 
 const AcademicAPI = {
   getGasUrl() {
