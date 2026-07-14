@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SiNilai - Sistem Akademik Terpadu</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Fullscreen Login View -->
+  <div id="login-view" class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo-box">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <h1>SiNilai</h1>
+        <p>SISTEM AKADEMIK TERPADU</p>
+      </div>
+      
+      <div id="login-alert" class="alert alert-danger hidden"></div>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username"><i class="fa-solid fa-user"></i> Username / NIM / NIDN</label>
+          <input type="text" id="login-username" required placeholder="Masukkan ID Pengguna Anda">
+        </div>
+        <div class="form-group">
+          <label for="login-password"><i class="fa-solid fa-lock"></i> Kata Sandi</label>
+          <input type="password" id="login-password" required placeholder="Masukkan Kata Sandi">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          Masuk <i class="fa-solid fa-right-to-bracket"></i>
+        </button>
+      </form>
+      
+      <div class="auth-footer">
+        <p>Gunakan akun demo berikut untuk masuk:</p>
+        <div class="demo-accounts">
+          <div><span>Admin:</span> <strong>admin</strong> (pass: admin123)</div>
+          <div><span>Dosen:</span> <strong>54321</strong> (pass: dsn123)</div>
+          <div><span>Mahasiswa:</span> <strong>12345</strong> (pass: mhs123)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Wrapper (Sidebar + Content) -->
+  <div id="app-view" class="app-container hidden">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div class="brand-text">
+          <h2>SiNilai</h2>
+          <span>SISTEM AKADEMIK</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <!-- ADMIN MENU SECTION -->
+        <div id="menu-admin-section" class="hidden">
+          <div class="menu-label">MENU UTAMA</div>
+          <ul>
+            <li class="menu-item active" data-view="dashboard">
+              <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
+            </li>
+            <li class="menu-item" data-view="master-matkul">
+              <i class="fa-solid fa-database"></i> <span>Master Matkul</span>
+            </li>
+          </ul>
+
+          <div class="menu-label">DATA USER</div>
+          <ul>
+            <li class="menu-item" data-view="data-dosen">
+              <i class="fa-solid fa-chalkboard-user"></i> <span>Data Dosen</span>
+            </li>
+            <li class="menu-item" data-view="data-mahasiswa">
+              <i class="fa-solid fa-users"></i> <span>Data Mahasiswa</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- LECTURER (DOSEN) MENU SECTION -->
+        <div id="menu-dosen-section" class="hidden">
+          <div class="menu-label">DOSEN</div>
+          <ul>
+            <li class="menu-item" data-view="dosen-profile">
+              <i class="fa-solid fa-address-card"></i> <span>Profil Dosen</span>
+            </li>
+            <li class="menu-item" data-view="input-nilai">
+              <i class="fa-solid fa-pen-to-square"></i> <span>Input Nilai</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- STUDENT (MAHASISWA) MENU SECTION -->
+        <div id="menu-mahasiswa-section" class="hidden">
+          <div class="menu-label">MAHASISWA</div>
+          <ul>
+            <li class="menu-item" data-view="student-dashboard">
+              <i class="fa-solid fa-id-card"></i> <span>Dashboard Nilai</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Common Section -->
+        <div class="menu-label">PENGATURAN</div>
+        <ul>
+          <li class="menu-item" data-view="settings">
+            <i class="fa-solid fa-gears"></i> <span>Database Sheet</span>
+          </li>
+          <li id="btn-logout" class="menu-item logout">
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Keluar</span>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Active User Profile Card in Sidebar -->
+      <div class="sidebar-user-card">
+        <img id="sidebar-user-photo" src="" alt="User Photo">
+        <div class="user-info">
+          <h4 id="sidebar-user-name">User Name</h4>
+          <span id="sidebar-user-role">Role</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      
+      <!-- VIEW: ADMIN DASHBOARD -->
+      <section id="view-dashboard" class="content-view">
+        <div class="view-header">
+          <h1>Dashboard</h1>
+          <p>Ringkasan statistik akademik terpadu.</p>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i class="fa-solid fa-user-graduate"></i>
+            </div>
+            <div class="stat-details">
+              <span>Total Mahasiswa</span>
+              <h2 id="stat-total-mhs">0</h2>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div class="stat-details">
+              <span>Master Mata Kuliah</span>
+              <h2 id="stat-total-matkul">0</h2>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon pink">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="stat-details">
+              <span>Total Nilai Diinput</span>
+              <h2 id="stat-total-nilai">0</h2>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Scale Section -->
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fa-solid fa-circle-info"></i>
+          </div>
+          <div class="info-content">
+            <h3>Sistem Skala Nilai Baru</h3>
+            <p>Sistem ini menggunakan struktur data terpusat (Master Data). Pastikan Admin telah menambahkan Dosen Pengampu dan Mata Kuliah sebelum dosen melakukan pengisian nilai.</p>
+            <div class="grade-scale">
+              <span>Skala nilai:</span>
+              <span class="badge badge-success">A = 4.0</span>
+              <span class="badge badge-blue">B+ = 3.5</span>
+              <span class="badge badge-blue-light">B = 3.0</span>
+              <span class="badge badge-warning-light">C+ = 2.5</span>
+              <span class="badge badge-warning">C = 2.0</span>
+              <span class="badge badge-orange">D = 1.0</span>
+              <span class="badge badge-danger">E = 0.0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: DATA DOSEN (ADMIN ONLY) -->
+      <section id="view-data-dosen" class="content-view hidden">
+        <div class="view-header">
+          <h1>Data Dosen</h1>
+          <p>Kelola profil pengajar dan dosen pengampu akademik.</p>
+        </div>
+
+        <div class="layout-grid">
+          <!-- Form Card -->
+          <div class="card card-form">
+            <h3>Tambah Dosen Baru</h3>
+            <form id="form-dosen">
+              <div class="form-group">
+                <label for="dosen-nidn">NIDN (Username Login)</label>
+                <input type="text" id="dosen-nidn" required placeholder="Contoh: 54323">
+              </div>
+              <div class="form-group">
+                <label for="dosen-password">Kata Sandi Akses</label>
+                <input type="password" id="dosen-password" required value="dsn123" placeholder="Default: dsn123">
+              </div>
+              <div class="form-group">
+                <label for="dosen-name">Nama Lengkap & Gelar</label>
+                <input type="text" id="dosen-name" required placeholder="Contoh: Dr. Eko Prasetyo, M.T.">
+              </div>
+              <div class="form-group">
+                <label for="dosen-photo">URL Foto Profil (Opsional)</label>
+                <input type="url" id="dosen-photo" placeholder="https://images.unsplash.com/...">
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Simpan Dosen</button>
+            </form>
+          </div>
+
+          <!-- Table Card -->
+          <div class="card card-table">
+            <h3>Daftar Dosen Terdaftar</h3>
+            <div class="table-container">
+              <table id="table-dosens">
+                <thead>
+                  <tr>
+                    <th>Foto</th>
+                    <th>NIDN</th>
+                    <th>Nama Dosen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: DATA MAHASISWA (ADMIN ONLY) -->
+      <section id="view-data-mahasiswa" class="content-view hidden">
+        <div class="view-header">
+          <h1>Data Mahasiswa</h1>
+          <p>Kelola data profil mahasiswa dan akun akses.</p>
+        </div>
+
+        <div class="layout-grid">
+          <!-- Form Card -->
+          <div class="card card-form">
+            <h3>Tambah Mahasiswa</h3>
+            <form id="form-student">
+              <div class="form-group">
+                <label for="student-nim">NIM (Username Login)</label>
+                <input type="text" id="student-nim" required placeholder="Contoh: 12348">
+              </div>
+              <div class="form-group">
+                <label for="student-password">Kata Sandi Akses</label>
+                <input type="password" id="student-password" required value="mhs123" placeholder="Default: mhs123">
+              </div>
+              <div class="form-group">
+                <label for="student-name">Nama Lengkap</label>
+                <input type="text" id="student-name" required placeholder="Contoh: Fitri Handayani">
+              </div>
+              <div class="form-group">
+                <label for="student-major">Jurusan</label>
+                <input type="text" id="student-major" required placeholder="Contoh: Sistem Informasi">
+              </div>
+              <div class="form-group">
+                <label for="student-photo">URL Foto Profil (Opsional)</label>
+                <input type="url" id="student-photo" placeholder="https://images.unsplash.com/...">
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Simpan Profil</button>
+            </form>
+          </div>
+
+          <!-- Table Card -->
+          <div class="card card-table">
+            <h3>Daftar Mahasiswa Aktif</h3>
+            <div class="table-container">
+              <table id="table-students">
+                <thead>
+                  <tr>
+                    <th>Foto</th>
+                    <th>NIM</th>
+                    <th>Nama Mahasiswa</th>
+                    <th>Jurusan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: MASTER MATAKULIAH (ADMIN ONLY) -->
+      <section id="view-master-matkul" class="content-view hidden">
+        <div class="view-header">
+          <h1>Master Mata Kuliah</h1>
+          <p>Kelola daftar mata kuliah dan dosen pengampu.</p>
+        </div>
+
+        <div class="layout-grid">
+          <!-- Form Card -->
+          <div class="card card-form">
+            <h3>Tambah Mata Kuliah</h3>
+            <form id="form-course">
+              <div class="form-group">
+                <label for="course-code">Kode Mata Kuliah</label>
+                <input type="text" id="course-code" required placeholder="Contoh: IF101">
+              </div>
+              <div class="form-group">
+                <label for="course-name">Nama Mata Kuliah</label>
+                <input type="text" id="course-name" required placeholder="Contoh: Desain Web Terapan">
+              </div>
+              <div class="form-group">
+                <label for="course-sks">Jumlah SKS</label>
+                <select id="course-sks" required>
+                  <option value="1">1 SKS</option>
+                  <option value="2" selected>2 SKS</option>
+                  <option value="3">3 SKS</option>
+                  <option value="4">4 SKS</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="course-lecturer-select">Dosen Pengampu</label>
+                <select id="course-lecturer-select" required>
+                  <option value="">-- Pilih Dosen --</option>
+                  <!-- Filled dynamically -->
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Simpan Matkul</button>
+            </form>
+          </div>
+
+          <!-- Table Card -->
+          <div class="card card-table">
+            <h3>Daftar Mata Kuliah</h3>
+            <div class="table-container">
+              <table id="table-courses">
+                <thead>
+                  <tr>
+                    <th>Kode</th>
+                    <th>Nama Mata Kuliah</th>
+                    <th>SKS</th>
+                    <th>Dosen Pengampu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: PROFIL DOSEN (DOSEN ONLY) -->
+      <section id="view-dosen-profile" class="content-view hidden">
+        <div class="view-header">
+          <h1>Profil Dosen</h1>
+          <p>Detail identitas dan daftar mata kuliah yang Anda ampu.</p>
+        </div>
+
+        <!-- Dosen Profile Banner -->
+        <div class="dosen-profile-banner">
+          <div class="dosen-avatar-wrap">
+            <img id="dosen-display-photo" src="" alt="Foto Dosen">
+          </div>
+          <div class="dosen-meta-info">
+            <h2 id="dosen-display-name">Dr. Ir. H. Ahmad Fauzi</h2>
+            <div class="dosen-badge-info">
+              <span><i class="fa-solid fa-id-card-clip"></i> NIDN: <strong id="dosen-display-nidn">54321</strong></span>
+              <span><i class="fa-solid fa-briefcase"></i> Jabatan: <strong>Dosen Pengampu Utama</strong></span>
+            </div>
+          </div>
+          <div class="dosen-courses-display">
+            <span>Kelas Diampu</span>
+            <h1 id="dosen-display-courses-count">0</h1>
+          </div>
+        </div>
+
+        <!-- Table Card of Courses Taught -->
+        <div class="card mt-4">
+          <h3>Mata Kuliah Yang Anda Ampu</h3>
+          <div class="table-container">
+            <table id="table-dosen-courses">
+              <thead>
+                <tr>
+                  <th>Kode Matkul</th>
+                  <th>Nama Mata Kuliah</th>
+                  <th>SKS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: INPUT NILAI (DOSEN ONLY) -->
+      <section id="view-input-nilai" class="content-view hidden">
+        <div class="view-header">
+          <h1>Input Nilai Mahasiswa</h1>
+          <p>Penginputan nilai mahasiswa untuk mata kuliah yang Anda ampu.</p>
+        </div>
+
+        <div class="layout-grid">
+          <!-- Form Card -->
+          <div class="card card-form">
+            <h3>Form Input Nilai</h3>
+            <form id="form-grade">
+              <div class="form-group">
+                <label for="grade-nim">Mahasiswa</label>
+                <select id="grade-nim" required>
+                  <option value="">-- Pilih Mahasiswa --</option>
+                  <!-- Filled dynamically -->
+                </select>
+                <span class="input-help">Menampilkan nama mahasiswa yang diinput oleh Admin.</span>
+              </div>
+              <div class="form-group">
+                <label for="grade-course">Mata Kuliah</label>
+                <select id="grade-course" required>
+                  <option value="">-- Pilih Mata Kuliah --</option>
+                  <!-- Filled dynamically -->
+                </select>
+                <span class="input-help">Hanya menampilkan mata kuliah yang Anda ampu.</span>
+              </div>
+              <div class="form-group">
+                <label for="grade-score">Nilai Huruf</label>
+                <select id="grade-score" required>
+                  <option value="A">A (4.0)</option>
+                  <option value="B+">B+ (3.5)</option>
+                  <option value="B">B (3.0)</option>
+                  <option value="C+">C+ (2.5)</option>
+                  <option value="C">C (2.0)</option>
+                  <option value="D">D (1.0)</option>
+                  <option value="E">E (0.0)</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check-double"></i> Simpan Nilai</button>
+            </form>
+          </div>
+
+          <!-- Table Card -->
+          <div class="card card-table">
+            <h3>Riwayat Nilai & IPK Terkini</h3>
+            <div class="table-container">
+              <table id="table-grades">
+                <thead>
+                  <tr>
+                    <th>NIM</th>
+                    <th>Nama Mahasiswa</th>
+                    <th>Mata Kuliah</th>
+                    <th>Nilai</th>
+                    <th>IPK Keseluruhan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: STUDENT DASHBOARD (STUDENT ONLY) -->
+      <section id="view-student-dashboard" class="content-view hidden">
+        <div class="view-header">
+          <h1>Dashboard Akademik Anda</h1>
+          <p>Evaluasi nilai semester dan kartu hasil studi mandiri.</p>
+        </div>
+
+        <!-- Student Profile Header Card -->
+        <div class="student-profile-banner">
+          <div class="student-avatar-wrap">
+            <img id="student-display-photo" src="" alt="Foto Mahasiswa">
+          </div>
+          <div class="student-meta-info">
+            <h2 id="student-display-name">Nama Mahasiswa</h2>
+            <div class="student-badge-info">
+              <span><i class="fa-solid fa-id-card-clip"></i> NIM: <strong id="student-display-nim">12345</strong></span>
+              <span><i class="fa-solid fa-graduation-cap"></i> Jurusan: <strong id="student-display-major">Teknik Informatika</strong></span>
+            </div>
+          </div>
+          <div class="student-gpa-display">
+            <span>IPK Saat Ini</span>
+            <h1 id="student-display-gpa">0.00</h1>
+          </div>
+        </div>
+
+        <!-- Student Grade Report -->
+        <div class="card mt-4">
+          <h3>Kartu Hasil Studi (KHS)</h3>
+          <div class="table-container">
+            <table id="table-student-khs">
+              <thead>
+                <tr>
+                  <th>Kode Matkul</th>
+                  <th>Mata Kuliah</th>
+                  <th>SKS</th>
+                  <th>Dosen Pengampu</th>
+                  <th>Nilai Huruf</th>
+                  <th>Bobot</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: SETTINGS -->
+      <section id="view-settings" class="content-view hidden">
+        <div class="view-header">
+          <h1>Pengaturan Database</h1>
+          <p>Integrasikan aplikasi dengan basis data Google Sheets Anda.</p>
+        </div>
+
+        <div class="card max-w-xl">
+          <h3>Koneksi Google Sheets</h3>
+          <p class="description">Secara default, aplikasi menggunakan database simulasi (**localStorage**). Anda dapat menyalin kode di file `google-apps-script.js`, menerbitkannya sebagai Web App di Google Sheets Anda, lalu menempelkan URL-nya di bawah ini untuk beralih ke basis data langsung.</p>
+          
+          <div class="form-group mt-4">
+            <label for="settings-gas-url">Google Apps Script Web App URL</label>
+            <input type="url" id="settings-gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+            <span class="input-help">Kosongkan URL jika ingin kembali menggunakan database lokal (localStorage).</span>
+          </div>
+
+          <div class="settings-actions">
+            <button id="btn-save-settings" class="btn btn-primary"><i class="fa-solid fa-circle-check"></i> Simpan Konfigurasi</button>
+            <button id="btn-init-db" class="btn btn-secondary"><i class="fa-solid fa-database"></i> Inisialisasi Google Sheet</button>
+          </div>
+          
+          <div id="settings-status" class="alert alert-info hidden mt-4"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="overlay hidden">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p id="loading-text">Memproses data...</p>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden">
+    <i class="fa-solid fa-bell"></i>
+    <span id="toast-message">Notifikasi</span>
+  </div>
+
+  <!-- API and App scripts -->
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
