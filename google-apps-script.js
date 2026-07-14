@@ -1,5 +1,5 @@
 /**
- * SiNilai - Google Sheets Database API (Production Edition - 1-100 Numeric Scale)
+ * SiNilai - Google Sheets Database API (Production Edition - Robust Routing)
  * Copy this code into your Google Apps Script Editor (Extensions > Apps Script).
  * Deploy it as a Web App (Deploy > New Deployment > Web App).
  * Configure:
@@ -40,11 +40,16 @@ function doPost(e) {
   var response = { success: false, message: "Invalid post action" };
   
   try {
-    var data = JSON.parse(e.postData.contents);
-    var action = data.action;
+    var data = {};
+    if (e && e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    }
+    
+    // Read action from POST body first, fallback to query parameters
+    var action = data.action || (e && e.parameter && e.parameter.action);
     
     if (action === "login") {
-      response = login(data.username, data.password);
+      response = login(data.username || e.parameter.username, data.password || e.parameter.password);
     } else if (action === "addCourse") {
       response = addCourse(data.courseCode, data.courseName, data.sks, data.lecturer);
     } else if (action === "addGrade") {
@@ -227,7 +232,7 @@ function getGrades() {
       nim: data[i][0].toString(),
       name: data[i][1],
       courseName: data[i][2],
-      grade: data[i][3], // Stores numeric value (e.g. 85)
+      grade: data[i][3], // Stores numeric value
       ipk: data[i][4] !== "" ? parseFloat(data[i][4]) : ""
     });
   }
@@ -271,7 +276,7 @@ function getStudentGrades(nim) {
         courseName: cName,
         sks: details.sks,
         lecturer: details.lecturer,
-        grade: scoreVal // Return the numeric score
+        grade: scoreVal
       });
     }
   }
@@ -458,8 +463,6 @@ function saveStudentGrades(nim, grades) {
     // Check if score is empty or unrated
     if (item.grade === "" || item.grade === null || item.grade === undefined) {
       if (existingRow) {
-        // If it exists but is set to empty, delete it (clear contents of row)
-        // Note: For simplicity we can clear content or leave it, let's delete the row.
         gradesSheet.deleteRow(existingRow);
         // Reload row maps since rows shifted
         gradesData = gradesSheet.getDataRange().getValues();
