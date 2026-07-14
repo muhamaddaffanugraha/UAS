@@ -94,5 +94,9 @@ const AcademicAPI = {
 
   async addGrade(nim, courseCode, grade) {
     return await this.call("addGrade", {}, { nim, courseCode, grade });
+  },
+
+  async saveStudentGrades(nim, grades) {
+    return await this.call("saveStudentGrades", {}, { nim, grades });
   }
 };

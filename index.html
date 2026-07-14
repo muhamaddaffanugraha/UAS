@@ -424,34 +424,31 @@
             <h3>Form Input Nilai</h3>
             <form id="form-grade">
               <div class="form-group">
-                <label for="grade-nim">Mahasiswa</label>
+                <label for="grade-nim">Pilih Mahasiswa</label>
                 <select id="grade-nim" required>
                   <option value="">-- Pilih Mahasiswa --</option>
                   <!-- Filled dynamically -->
                 </select>
-                <span class="input-help">Menampilkan nama mahasiswa yang diinput oleh Admin.</span>
               </div>
-              <div class="form-group">
-                <label for="grade-course">Mata Kuliah</label>
-                <select id="grade-course" required>
-                  <option value="">-- Pilih Mata Kuliah --</option>
-                  <!-- Filled dynamically -->
-                </select>
-                <span class="input-help">Hanya menampilkan mata kuliah yang Anda ampu.</span>
+              
+              <div id="grade-placeholder" class="text-center text-muted" style="padding: 2rem 0; font-size: 0.9rem;">
+                <i class="fa-solid fa-user-pen" style="font-size: 2rem; color: var(--primary); opacity: 0.2; margin-bottom: 0.5rem; display: block;"></i>
+                Pilih mahasiswa terlebih dahulu untuk mengisi nilai.
               </div>
-              <div class="form-group">
-                <label for="grade-score">Nilai Huruf</label>
-                <select id="grade-score" required>
-                  <option value="A">A (4.0)</option>
-                  <option value="B+">B+ (3.5)</option>
-                  <option value="B">B (3.0)</option>
-                  <option value="C+">C+ (2.5)</option>
-                  <option value="C">C (2.0)</option>
-                  <option value="D">D (1.0)</option>
-                  <option value="E">E (0.0)</option>
-                </select>
+
+              <div id="grade-input-section" class="hidden">
+                <div class="menu-label" style="padding-left: 0; margin-bottom: 0.75rem;">Input Nilai Angka (1-100)</div>
+                <div id="grade-courses-list" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                  <!-- Dynamically populated rows -->
+                </div>
+                
+                <div class="grade-realtime-gpa" style="background-color: var(--primary-light); padding: 1rem; border-radius: var(--radius-md); font-size: 0.9rem; display: flex; justify-content: space-between; font-weight: 600; color: var(--primary); margin-bottom: 1.25rem;">
+                  <span>Total Kredit: <strong id="grade-preview-sks">0 SKS</strong></span>
+                  <span>IPK Sementara: <strong id="grade-preview-gpa">0.00</strong></span>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-save"></i> Simpan Seluruh Nilai</button>
               </div>
-              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check-double"></i> Simpan Nilai</button>
             </form>
           </div>
 

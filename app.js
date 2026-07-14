@@ -487,11 +487,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   const elFormGrade = document.getElementById("form-grade");
   const elGradeNimSelect = document.getElementById("grade-nim");
-  const elGradeCourseSelect = document.getElementById("grade-course");
+  const elGradePlaceholder = document.getElementById("grade-placeholder");
+  const elGradeInputSection = document.getElementById("grade-input-section");
+  const elGradeCoursesList = document.getElementById("grade-courses-list");
+  const elGradePreviewSks = document.getElementById("grade-preview-sks");
+  const elGradePreviewGpa = document.getElementById("grade-preview-gpa");
   const elTableGradesBody = document.querySelector("#table-grades tbody");
 
   async function loadGradesView() {
     if (!currentUser) return;
+    
+    elGradePlaceholder.classList.remove("hidden");
+    elGradeInputSection.classList.add("hidden");
+    elGradeCoursesList.innerHTML = "";
+    elGradePreviewSks.textContent = "0 SKS";
+    elGradePreviewGpa.textContent = "0.00";
     
     elTableGradesBody.innerHTML = `<tr><td colspan="5" class="text-center">Memuat data...</td></tr>`;
     
@@ -511,21 +521,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(e);
     }
 
-    // Populate courses dropdown (only courses taught by this lecturer)
-    elGradeCourseSelect.innerHTML = `<option value="">-- Pilih Mata Kuliah --</option>`;
+    // Get Dosen's courses to check which ones are taught by current Dosen
     let myCoursesMap = {};
     try {
       const resCourse = await AcademicAPI.getCourses();
       if (resCourse.success) {
         const myCourses = resCourse.courses.filter(c => c.lecturer.toLowerCase().trim() === currentUser.name.toLowerCase().trim());
-        
         myCourses.forEach(c => {
           myCoursesMap[c.courseName.toLowerCase()] = true;
-          
-          const opt = document.createElement("option");
-          opt.value = c.courseCode;
-          opt.textContent = `${c.courseCode} - ${c.courseName}`;
-          elGradeCourseSelect.appendChild(opt);
         });
       }
     } catch (e) {
@@ -543,11 +546,17 @@ document.addEventListener("DOMContentLoaded", () => {
           filteredGrades.forEach(g => {
             const row = document.createElement("tr");
             const ipkVal = g.ipk !== "" ? `<span class="ipk-highlight">${parseFloat(g.ipk).toFixed(2)}</span>` : "";
+            const scoreNum = parseFloat(g.grade);
+            let scoreText = "-";
+            if (!isNaN(scoreNum)) {
+              const letter = getLetterFromScore(scoreNum);
+              scoreText = `${scoreNum} (${letter})`;
+            }
             row.innerHTML = `
               <td>${escapeHTML(g.nim)}</td>
               <td>${escapeHTML(g.name)}</td>
               <td>${escapeHTML(g.courseName)}</td>
-              <td><strong class="badge ${getGradeBadgeClass(g.grade)}">${g.grade}</strong></td>
+              <td><strong class="badge ${getGradeBadgeClass(getLetterFromScore(scoreNum))}">${scoreText}</strong></td>
               <td>${ipkVal}</td>
             `;
             elTableGradesBody.appendChild(row);
@@ -561,19 +570,164 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Handle student selection change to load active grades and generate input form
+  if (elGradeNimSelect) {
+    elGradeNimSelect.addEventListener("change", async () => {
+      const nim = elGradeNimSelect.value;
+      if (!nim) {
+        elGradePlaceholder.classList.remove("hidden");
+        elGradeInputSection.classList.add("hidden");
+        elGradeCoursesList.innerHTML = "";
+        return;
+      }
+      
+      setLoader(true, "Memuat nilai mahasiswa...");
+      elGradePlaceholder.classList.add("hidden");
+      elGradeInputSection.classList.remove("hidden");
+      elGradeCoursesList.innerHTML = "";
+      
+      try {
+        const courseRes = await AcademicAPI.getCourses();
+        if (!courseRes.success) throw new Error("Gagal mengambil data mata kuliah.");
+        
+        const myCourses = courseRes.courses.filter(c => c.lecturer.toLowerCase().trim() === currentUser.name.toLowerCase().trim());
+        
+        const gradesRes = await AcademicAPI.getStudentGrades(nim);
+        const existingGradesMap = {};
+        if (gradesRes.success) {
+          gradesRes.grades.forEach(g => {
+            existingGradesMap[g.courseName.toLowerCase()] = g.grade;
+          });
+        }
+        
+        if (myCourses.length === 0) {
+          elGradeCoursesList.innerHTML = `<div class="text-center text-muted" style="padding: 1rem 0;">Anda tidak memiliki mata kuliah yang diampu.</div>`;
+          elGradeInputSection.classList.add("hidden");
+          elGradePlaceholder.classList.remove("hidden");
+          return;
+        }
+        
+        myCourses.forEach(c => {
+          const existingScore = existingGradesMap[c.courseName.toLowerCase()];
+          const existingValue = existingScore !== undefined ? existingScore : "";
+          
+          const row = document.createElement("div");
+          row.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;";
+          row.innerHTML = `
+            <div style="flex: 1;">
+              <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem;">${escapeHTML(c.courseName)}</h4>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${c.courseCode} &bull; ${c.sks} SKS</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <input type="number" class="grade-score-input" data-course-code="${c.courseCode}" data-sks="${c.sks}" min="0" max="100" value="${existingValue}" placeholder="1-100" style="width: 80px; padding: 0.5rem; text-align: center; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); font-weight: 600; font-size: 0.9rem;">
+              <span class="badge badge-secondary grade-letter-badge" style="width: 45px; text-align: center; justify-content: center; min-height: 25px; display: inline-flex; align-items: center;">-</span>
+            </div>
+          `;
+          elGradeCoursesList.appendChild(row);
+        });
+        
+        const inputs = elGradeCoursesList.querySelectorAll(".grade-score-input");
+        inputs.forEach(input => {
+          input.addEventListener("input", () => {
+            updateInputRowLetter(input);
+            calculateRealtimeGPA();
+          });
+          updateInputRowLetter(input);
+        });
+        
+        calculateRealtimeGPA();
+      } catch (err) {
+        showToast("Error: " + err.message, "error");
+      } finally {
+        setLoader(false);
+      }
+    });
+  }
+
+  function updateInputRowLetter(input) {
+    const parent = input.parentElement;
+    const badge = parent.querySelector(".grade-letter-badge");
+    const val = input.value.trim();
+    
+    if (val === "") {
+      badge.textContent = "-";
+      badge.className = "badge badge-secondary grade-letter-badge";
+      return;
+    }
+    
+    const score = parseFloat(val);
+    if (isNaN(score) || score < 0 || score > 100) {
+      badge.textContent = "?";
+      badge.className = "badge badge-danger grade-letter-badge";
+      return;
+    }
+    
+    const letter = getLetterFromScore(score);
+    badge.textContent = letter;
+    badge.className = `badge ${getGradeBadgeClass(letter)} grade-letter-badge`;
+  }
+
+  function calculateRealtimeGPA() {
+    const inputs = elGradeCoursesList.querySelectorAll(".grade-score-input");
+    let totalSks = 0;
+    let totalWeightedPoints = 0;
+    
+    inputs.forEach(input => {
+      const val = input.value.trim();
+      if (val !== "") {
+        const score = parseFloat(val);
+        if (!isNaN(score) && score >= 0 && score <= 100) {
+          const sks = parseInt(input.getAttribute("data-sks"));
+          const weight = getWeightFromScore(score);
+          totalSks += sks;
+          totalWeightedPoints += (sks * weight);
+        }
+      }
+    });
+    
+    elGradePreviewSks.textContent = `${totalSks} SKS`;
+    const gpa = totalSks > 0 ? (totalWeightedPoints / totalSks) : 0.0;
+    elGradePreviewGpa.textContent = gpa.toFixed(2);
+  }
+
+  // Handle batch grade submit
   if (elFormGrade) {
     elFormGrade.addEventListener("submit", async (e) => {
       e.preventDefault();
-      setLoader(true, "Menyimpan Nilai...");
       
       const nim = elGradeNimSelect.value;
-      const courseCode = elGradeCourseSelect.value;
-      const grade = document.getElementById("grade-score").value;
+      if (!nim) return;
+      
+      const inputs = elGradeCoursesList.querySelectorAll(".grade-score-input");
+      const gradesPayload = [];
+      let hasError = false;
+      
+      inputs.forEach(input => {
+        const val = input.value.trim();
+        const code = input.getAttribute("data-course-code");
+        
+        if (val !== "") {
+          const score = parseFloat(val);
+          if (isNaN(score) || score < 0 || score > 100) {
+            hasError = true;
+          }
+          gradesPayload.push({ courseCode: code, grade: score });
+        } else {
+          gradesPayload.push({ courseCode: code, grade: "" });
+        }
+      });
+      
+      if (hasError) {
+        showToast("Rentang nilai harus berkisar 0 - 100.", "error");
+        return;
+      }
+      
+      setLoader(true, "Menyimpan seluruh nilai...");
       
       try {
-        const res = await AcademicAPI.addGrade(nim, courseCode, grade);
+        const res = await AcademicAPI.saveStudentGrades(nim, gradesPayload);
         if (res.success) {
-          showToast("Nilai berhasil disimpan!");
+          showToast("Seluruh nilai mahasiswa berhasil diperbarui!");
           elFormGrade.reset();
           loadGradesView();
         } else {
@@ -617,7 +771,13 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (res.grades.length > 0) {
           res.grades.forEach(g => {
-            const weight = gradeWeights[g.grade] !== undefined ? gradeWeights[g.grade] : 0.0;
+            const scoreNum = parseFloat(g.grade);
+            let letter = "-";
+            let weight = 0.0;
+            if (!isNaN(scoreNum)) {
+              letter = getLetterFromScore(scoreNum);
+              weight = getWeightFromScore(scoreNum);
+            }
             totalSks += g.sks;
             totalWeightedPoints += (g.sks * weight);
             
@@ -627,7 +787,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <td>${escapeHTML(g.courseName)}</td>
               <td class="sks-cell">${g.sks} SKS</td>
               <td>${escapeHTML(g.lecturer)}</td>
-              <td><span class="badge ${getGradeBadgeClass(g.grade)}">${g.grade}</span></td>
+              <td><span class="badge ${getGradeBadgeClass(letter)}">${scoreNum} (${letter})</span></td>
               <td>${weight.toFixed(1)}</td>
             `;
             elTableStudentKhsBody.appendChild(row);
@@ -720,6 +880,30 @@ document.addEventListener("DOMContentLoaded", () => {
       case "E": return "badge-danger";
       default: return "badge-secondary";
     }
+  }
+
+  function getLetterFromScore(score) {
+    const val = parseFloat(score);
+    if (isNaN(val)) return "-";
+    if (val >= 80) return "A";
+    if (val >= 75) return "B+";
+    if (val >= 70) return "B";
+    if (val >= 65) return "C+";
+    if (val >= 60) return "C";
+    if (val >= 50) return "D";
+    return "E";
+  }
+
+  function getWeightFromScore(score) {
+    const val = parseFloat(score);
+    if (isNaN(val)) return 0.0;
+    if (val >= 80) return 4.0;
+    if (val >= 75) return 3.5;
+    if (val >= 70) return 3.0;
+    if (val >= 65) return 2.5;
+    if (val >= 60) return 2.0;
+    if (val >= 50) return 1.0;
+    return 0.0;
   }
 
   // Bind Sidebar Navigation Clicks

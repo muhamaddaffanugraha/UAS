@@ -1,5 +1,5 @@
 /**
- * SiNilai - Google Sheets Database API (Production Edition - Auto-Bootstrap Admin)
+ * SiNilai - Google Sheets Database API (Production Edition - 1-100 Numeric Scale)
  * Copy this code into your Google Apps Script Editor (Extensions > Apps Script).
  * Deploy it as a Web App (Deploy > New Deployment > Web App).
  * Configure:
@@ -49,6 +49,8 @@ function doPost(e) {
       response = addCourse(data.courseCode, data.courseName, data.sks, data.lecturer);
     } else if (action === "addGrade") {
       response = addGrade(data.nim, data.courseCode, data.grade);
+    } else if (action === "saveStudentGrades") {
+      response = saveStudentGrades(data.nim, data.grades);
     } else if (action === "addStudent") {
       response = addStudent(data.nim, data.password, data.name, data.major, data.photoUrl);
     } else if (action === "addDosen") {
@@ -225,7 +227,7 @@ function getGrades() {
       nim: data[i][0].toString(),
       name: data[i][1],
       courseName: data[i][2],
-      grade: data[i][3],
+      grade: data[i][3], // Stores numeric value (e.g. 85)
       ipk: data[i][4] !== "" ? parseFloat(data[i][4]) : ""
     });
   }
@@ -261,18 +263,20 @@ function getStudentGrades(nim) {
       var cName = gradesData[i][2].toString().trim();
       var cNameKey = cName.toLowerCase();
       var details = courseMap[cNameKey] || { code: "-", sks: 3, lecturer: "Dosen Pengampu" };
+      var scoreVal = parseFloat(gradesData[i][3]);
+      if (isNaN(scoreVal)) scoreVal = 0;
       
       studentGrades.push({
         courseCode: details.code,
         courseName: cName,
         sks: details.sks,
         lecturer: details.lecturer,
-        grade: gradesData[i][3]
+        grade: scoreVal // Return the numeric score
       });
     }
   }
   
-  var ipk = calculateIPKFromGrades(studentGrades);
+  var ipk = calculateIPKFromScores(studentGrades);
   return { success: true, grades: studentGrades, ipk: ipk };
 }
 
@@ -336,7 +340,7 @@ function addDosen(nidn, password, name, photoUrl) {
   return { success: true, message: "Dosen berhasil ditambahkan" };
 }
 
-// Add or update student grade
+// Add single student grade
 function addGrade(nim, courseCode, grade) {
   var ss = getSpreadsheet();
   var usersSheet = ss.getSheetByName("Users");
@@ -385,16 +389,103 @@ function addGrade(nim, courseCode, grade) {
     }
   }
   
+  var score = parseFloat(grade);
+  if (isNaN(score)) score = 0;
+  
   if (existingRowIndex !== -1) {
-    gradesSheet.getRange(existingRowIndex, 4).setValue(grade);
+    gradesSheet.getRange(existingRowIndex, 4).setValue(score);
   } else {
-    gradesSheet.appendRow([nim, studentName, courseName, grade, ""]);
+    gradesSheet.appendRow([nim, studentName, courseName, score, ""]);
   }
   
-  // Recalculate IPK and write to last row
   recalculateStudentIPK(nim);
-  
   return { success: true, message: "Nilai berhasil disimpan" };
+}
+
+// Batch Save student grades
+function saveStudentGrades(nim, grades) {
+  var ss = getSpreadsheet();
+  var usersSheet = ss.getSheetByName("Users");
+  var coursesSheet = ss.getSheetByName("Courses");
+  var gradesSheet = ss.getSheetByName("Grades");
+  
+  if (!gradesSheet) {
+    gradesSheet = ss.insertSheet("Grades");
+    gradesSheet.appendRow(["NIM", "Nama", "Mata Kuliah", "Nilai", "IPK"]);
+  }
+  
+  // Find Student Name
+  var studentName = "";
+  if (usersSheet) {
+    var users = usersSheet.getDataRange().getValues();
+    for (var i = 1; i < users.length; i++) {
+      if (users[i][0].toString().trim() === nim.toString().trim()) {
+        studentName = users[i][3];
+        break;
+      }
+    }
+  }
+  if (!studentName) return { success: false, message: "NIM Mahasiswa tidak ditemukan" };
+  
+  // Map Course Code to Course Name
+  var courseCodeMap = {};
+  if (coursesSheet) {
+    var courses = coursesSheet.getDataRange().getValues();
+    for (var j = 1; j < courses.length; j++) {
+      courseCodeMap[courses[j][0].toString().trim().toLowerCase()] = courses[j][1].toString().trim();
+    }
+  }
+  
+  // Load existing grades
+  var gradesRange = gradesSheet.getDataRange();
+  var gradesData = gradesRange.getValues();
+  
+  var studentGradesRowMap = {};
+  for (var k = 1; k < gradesData.length; k++) {
+    if (gradesData[k][0].toString().trim() === nim.toString().trim()) {
+      studentGradesRowMap[gradesData[k][2].toString().trim().toLowerCase()] = k + 1;
+    }
+  }
+  
+  // Process grades array
+  for (var g = 0; g < grades.length; g++) {
+    var item = grades[g];
+    var courseName = courseCodeMap[item.courseCode.toLowerCase()];
+    if (!courseName) continue;
+    
+    var existingRow = studentGradesRowMap[courseName.toLowerCase()];
+    
+    // Check if score is empty or unrated
+    if (item.grade === "" || item.grade === null || item.grade === undefined) {
+      if (existingRow) {
+        // If it exists but is set to empty, delete it (clear contents of row)
+        // Note: For simplicity we can clear content or leave it, let's delete the row.
+        gradesSheet.deleteRow(existingRow);
+        // Reload row maps since rows shifted
+        gradesData = gradesSheet.getDataRange().getValues();
+        studentGradesRowMap = {};
+        for (var idx = 1; idx < gradesData.length; idx++) {
+          if (gradesData[idx][0].toString().trim() === nim.toString().trim()) {
+            studentGradesRowMap[gradesData[idx][2].toString().trim().toLowerCase()] = idx + 1;
+          }
+        }
+      }
+      continue;
+    }
+    
+    var score = parseFloat(item.grade);
+    if (isNaN(score)) continue;
+    
+    if (existingRow) {
+      gradesSheet.getRange(existingRow, 4).setValue(score);
+    } else {
+      gradesSheet.appendRow([nim, studentName, courseName, score, ""]);
+      studentGradesRowMap[courseName.toLowerCase()] = gradesSheet.getLastRow();
+    }
+  }
+  
+  recalculateStudentIPK(nim);
+  return { success: true, message: "Seluruh nilai berhasil disimpan." };
 }
 
 // Recalculate student IPK and write only to last row
@@ -421,16 +512,18 @@ function recalculateStudentIPK(nim) {
     if (gradesData[i][0].toString().trim() === nim.toString().trim()) {
       var courseName = gradesData[i][2].toString().trim();
       var sks = courseSksMap[courseName.toLowerCase()] || 3;
-      var grade = gradesData[i][3].toString().trim();
+      var scoreVal = parseFloat(gradesData[i][3]);
       
-      studentGradeEntries.push({ sks: sks, grade: grade });
-      rowIndices.push(i + 1);
+      if (!isNaN(scoreVal)) {
+        studentGradeEntries.push({ sks: sks, score: scoreVal });
+        rowIndices.push(i + 1);
+      }
     }
   }
   
   if (studentGradeEntries.length === 0) return;
   
-  var ipk = calculateIPKFromGrades(studentGradeEntries);
+  var ipk = calculateIPKFromScores(studentGradeEntries);
   var formattedIpk = ipk.toFixed(2);
   
   for (var r = 0; r < rowIndices.length; r++) {
@@ -441,29 +534,30 @@ function recalculateStudentIPK(nim) {
   gradesSheet.getRange(lastRowForStudent, 5).setValue(formattedIpk);
 }
 
-// Calculate GPA based on grade list
-function calculateIPKFromGrades(gradesList) {
-  var gradeWeights = {
-    "A": 4.0,
-    "B+": 3.5,
-    "B": 3.0,
-    "C+": 2.5,
-    "C": 2.0,
-    "D": 1.0,
-    "E": 0.0
-  };
-  
+// Calculate GPA based on score weights
+function calculateIPKFromScores(gradesList) {
   var totalSks = 0;
   var totalWeightedPoints = 0;
   
   for (var i = 0; i < gradesList.length; i++) {
     var entry = gradesList[i];
-    var weight = gradeWeights[entry.grade];
-    if (weight !== undefined) {
+    var scoreValue = parseFloat(entry.score);
+    if (!isNaN(scoreValue)) {
+      var weight = getWeightFromScore(scoreValue);
       totalSks += entry.sks;
       totalWeightedPoints += (entry.sks * weight);
     }
   }
   
   return totalSks > 0 ? (totalWeightedPoints / totalSks) : 0.0;
+}
+
+function getWeightFromScore(score) {
+  if (score >= 80) return 4.0; // A
+  if (score >= 75) return 3.5; // B+
+  if (score >= 70) return 3.0; // B
+  if (score >= 65) return 2.5; // C+
+  if (score >= 60) return 2.0; // C
+  if (score >= 50) return 1.0; // D
+  return 0.0; // E
 }
