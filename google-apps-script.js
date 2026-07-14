@@ -1,5 +1,5 @@
 /**
- * SiNilai - Google Sheets Database API (Three-Role Edition)
+ * SiNilai - Google Sheets Database API (Production Edition - Auto-Bootstrap Admin)
  * Copy this code into your Google Apps Script Editor (Extensions > Apps Script).
  * Deploy it as a Web App (Deploy > New Deployment > Web App).
  * Configure:
@@ -33,8 +33,7 @@ function doGet(e) {
   }
   
   return ContentService.createTextOutput(JSON.stringify(response))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader("Access-Control-Allow-Origin", "*");
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
@@ -60,16 +59,7 @@ function doPost(e) {
   }
   
   return ContentService.createTextOutput(JSON.stringify(response))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader("Access-Control-Allow-Origin", "*");
-}
-
-// Handle CORS Preflight
-function doOptions(e) {
-  return ContentService.createTextOutput("")
-    .setHeader("Access-Control-Allow-Origin", "*")
-    .setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // Helper to open spreadsheet
@@ -77,7 +67,7 @@ function getSpreadsheet() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
 
-// Initialize database sheets with sample data
+// Initialize database sheets with ONLY default admin account
 function initDatabase() {
   var ss = getSpreadsheet();
   
@@ -87,12 +77,21 @@ function initDatabase() {
     usersSheet = ss.insertSheet("Users");
     usersSheet.appendRow(["Username", "Password", "Role", "Name", "Major", "PhotoUrl"]);
     
-    // Add default admin, sample dosen, and sample mahasiswa
+    // Add default admin account
     usersSheet.appendRow(["admin", "admin123", "adm", "System Administrator", "-", "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"]);
-    usersSheet.appendRow(["54321", "dsn123", "dsn", "Dr. Ir. H. Ahmad Fauzi", "-", "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150"]);
-    usersSheet.appendRow(["54322", "dsn123", "dsn", "Prof. Rahmat Hidayat", "-", "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150"]);
-    usersSheet.appendRow(["12345", "mhs123", "mhs", "Budi Santoso", "Teknik Informatika", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"]);
-    usersSheet.appendRow(["12346", "mhs123", "mhs", "Siti Aminah", "Sistem Informasi", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150"]);
+  } else {
+    // Verify that at least one admin exists
+    var data = usersSheet.getDataRange().getValues();
+    var hasAdmin = false;
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][2] === "adm") {
+        hasAdmin = true;
+        break;
+      }
+    }
+    if (!hasAdmin) {
+      usersSheet.appendRow(["admin", "admin123", "adm", "System Administrator", "-", "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"]);
+    }
   }
   
   // 2. Create Courses Sheet
@@ -100,11 +99,6 @@ function initDatabase() {
   if (!coursesSheet) {
     coursesSheet = ss.insertSheet("Courses");
     coursesSheet.appendRow(["CourseCode", "CourseName", "SKS", "Lecturer"]);
-    
-    // Add sample courses
-    coursesSheet.appendRow(["IF101", "Pemrograman Dasar", 3, "Dr. Ir. H. Ahmad Fauzi"]);
-    coursesSheet.appendRow(["IF102", "Struktur Data", 4, "Prof. Rahmat Hidayat"]);
-    coursesSheet.appendRow(["IF103", "Basis Data", 3, "Dr. Ir. H. Ahmad Fauzi"]);
   }
   
   // 3. Create Grades Sheet
@@ -112,23 +106,24 @@ function initDatabase() {
   if (!gradesSheet) {
     gradesSheet = ss.insertSheet("Grades");
     gradesSheet.appendRow(["NIM", "Nama", "Mata Kuliah", "Nilai", "IPK"]);
-    
-    // Add sample grades for Budi Santoso (NIM: 12345)
-    gradesSheet.appendRow(["12345", "Budi Santoso", "Pemrograman Dasar", "A", ""]);
-    gradesSheet.appendRow(["12345", "Budi Santoso", "Struktur Data", "B+", ""]);
-    
-    // Recalculate IPK for initial data
-    recalculateStudentIPK("12345");
   }
   
-  return { success: true, message: "Database initialized successfully" };
+  return { success: true, message: "Database initialized successfully with default admin account." };
 }
 
-// User login endpoint
+// User login endpoint with auto-bootstrap for admin
 function login(username, password) {
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName("Users");
-  if (!sheet) return { success: false, message: "Database Users not found. Please initialize first." };
+  
+  // Bootstrap: If Users sheet doesn't exist, and credentials are admin/admin123,
+  // automatically initialize the sheet tables first.
+  if (!sheet && username.trim().toLowerCase() === "admin" && password === "admin123") {
+    initDatabase();
+    sheet = ss.getSheetByName("Users");
+  }
+  
+  if (!sheet) return { success: false, message: "Database belum diinisialisasi. Silakan masuk menggunakan admin / admin123 terlebih dahulu." };
   
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
@@ -145,6 +140,22 @@ function login(username, password) {
       };
     }
   }
+  
+  // Safe Fallback: If sheet exists but admin was deleted, auto-recreate it
+  if (username.trim().toLowerCase() === "admin" && password === "admin123") {
+    initDatabase();
+    return {
+      success: true,
+      user: {
+        username: "admin",
+        role: "adm",
+        name: "System Administrator",
+        major: "-",
+        photoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150"
+      }
+    };
+  }
+  
   return { success: false, message: "ID Pengguna atau Kata Sandi salah" };
 }
 

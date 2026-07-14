@@ -17,7 +17,9 @@
 
   <!-- Fullscreen Login View -->
   <div id="login-view" class="auth-container">
-    <div class="auth-card">
+    
+    <!-- CARD: USER LOGIN -->
+    <div id="login-card" class="auth-card">
       <div class="auth-header">
         <div class="logo-box">
           <i class="fa-solid fa-graduation-cap"></i>
@@ -41,16 +43,8 @@
           Masuk <i class="fa-solid fa-right-to-bracket"></i>
         </button>
       </form>
-      
-      <div class="auth-footer">
-        <p>Gunakan akun demo berikut untuk masuk:</p>
-        <div class="demo-accounts">
-          <div><span>Admin:</span> <strong>admin</strong> (pass: admin123)</div>
-          <div><span>Dosen:</span> <strong>54321</strong> (pass: dsn123)</div>
-          <div><span>Mahasiswa:</span> <strong>12345</strong> (pass: mhs123)</div>
-        </div>
-      </div>
     </div>
+
   </div>
 
   <!-- Main Application Wrapper (Sidebar + Content) -->
@@ -541,17 +535,16 @@
 
         <div class="card max-w-xl">
           <h3>Koneksi Google Sheets</h3>
-          <p class="description">Secara default, aplikasi menggunakan database simulasi (**localStorage**). Anda dapat menyalin kode di file `google-apps-script.js`, menerbitkannya sebagai Web App di Google Sheets Anda, lalu menempelkan URL-nya di bawah ini untuk beralih ke basis data langsung.</p>
+          <p class="description">Aplikasi ini terhubung secara permanen ke Google Sheets Anda melalui Apps Script Web App.</p>
           
           <div class="form-group mt-4">
             <label for="settings-gas-url">Google Apps Script Web App URL</label>
-            <input type="url" id="settings-gas-url" placeholder="https://script.google.com/macros/s/.../exec">
-            <span class="input-help">Kosongkan URL jika ingin kembali menggunakan database lokal (localStorage).</span>
+            <input type="url" id="settings-gas-url" disabled placeholder="https://script.google.com/macros/s/.../exec">
+            <span class="input-help">Tautan URL database Google Sheets Anda telah dikonfigurasi secara bawaan.</span>
           </div>
 
           <div class="settings-actions">
-            <button id="btn-save-settings" class="btn btn-primary"><i class="fa-solid fa-circle-check"></i> Simpan Konfigurasi</button>
-            <button id="btn-init-db" class="btn btn-secondary"><i class="fa-solid fa-database"></i> Inisialisasi Google Sheet</button>
+            <button id="btn-init-db" class="btn btn-primary"><i class="fa-solid fa-database"></i> Inisialisasi Google Sheet</button>
           </div>
           
           <div id="settings-status" class="alert alert-info hidden mt-4"></div>

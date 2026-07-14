@@ -1,8 +1,11 @@
 /**
- * SiNilai - Main Application Logic (Three-Role Edition)
+ * SiNilai - Main Application Logic (Google Sheets Production Edition)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Clear all localStorage data to ensure no academic records or settings are stored on browser
+  localStorage.clear();
+
   // Constants
   const defaultAvatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366F1'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
 
@@ -23,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Cache DOM Elements
   const elLoginView = document.getElementById("login-view");
   const elAppView = document.getElementById("app-view");
+  
   const elLoginForm = document.getElementById("login-form");
   const elLoginUsername = document.getElementById("login-username");
   const elLoginPassword = document.getElementById("login-password");
@@ -43,9 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const elLoadingText = document.getElementById("loading-text");
   const elToast = document.getElementById("toast");
   const elToastMessage = document.getElementById("toast-message");
-
-  // Initialize offline mock database
-  AcademicAPI.mockInit();
 
   // ==========================================
   // VIEW ROUTER
@@ -145,16 +146,15 @@ document.addEventListener("DOMContentLoaded", () => {
       currentUser = JSON.parse(sessionData);
       loginSuccess(currentUser);
     } else {
-      showLoginScreen();
+      // Show login screen directly
+      elLoginUsername.value = "";
+      elLoginPassword.value = "";
+      elLoginAlert.classList.add("hidden");
+      
+      elLoginView.classList.remove("hidden");
+      elAppView.classList.add("hidden");
+      currentUser = null;
     }
-  }
-
-  function showLoginScreen() {
-    elLoginUsername.value = "";
-    elLoginPassword.value = "";
-    elAppView.classList.add("hidden");
-    elLoginView.classList.remove("hidden");
-    currentUser = null;
   }
 
   function loginSuccess(user) {
@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Form Login Handler
+  // User Login Form Handler
   elLoginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     elLoginAlert.classList.add("hidden");
@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Logout Button Handler
   document.getElementById("btn-logout").addEventListener("click", () => {
     sessionStorage.removeItem("sinilai_user");
-    showLoginScreen();
+    checkSession();
     showToast("Anda telah keluar dari sistem.");
   });
 
@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (resDsn.success) {
           resDsn.dosens.forEach(d => {
             const opt = document.createElement("option");
-            opt.value = d.name; // Save lecturer name
+            opt.value = d.name;
             opt.textContent = `${d.nidn} - ${d.name}`;
             elCourseLecturerSelect.appendChild(opt);
           });
@@ -458,7 +458,6 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await AcademicAPI.getCourses();
       if (res.success) {
-        // Filter courses taught by this lecturer
         const myCourses = res.courses.filter(c => c.lecturer.toLowerCase().trim() === currentUser.name.toLowerCase().trim());
         
         elDosenDisplayCoursesCount.textContent = myCourses.length;
@@ -496,7 +495,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     elTableGradesBody.innerHTML = `<tr><td colspan="5" class="text-center">Memuat data...</td></tr>`;
     
-    // 1. Populate students list dropdown (with all registered students)
+    // Populate students list dropdown
     elGradeNimSelect.innerHTML = `<option value="">-- Pilih Mahasiswa --</option>`;
     try {
       const resStud = await AcademicAPI.getStudents();
@@ -512,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(e);
     }
 
-    // 2. Populate courses dropdown (only courses taught by this lecturer)
+    // Populate courses dropdown (only courses taught by this lecturer)
     elGradeCourseSelect.innerHTML = `<option value="">-- Pilih Mata Kuliah --</option>`;
     let myCoursesMap = {};
     try {
@@ -533,11 +532,10 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(e);
     }
 
-    // 3. Populate grades history table (filtered to only show grades for this lecturer's courses)
+    // Populate grades table (filtered to show only this lecturer's course grades)
     try {
       const resGrades = await AcademicAPI.getGrades();
       if (resGrades.success) {
-        // Filter grades to show only this lecturer's course grades
         const filteredGrades = resGrades.grades.filter(g => myCoursesMap[g.courseName.toLowerCase()] === true);
         
         if (filteredGrades.length > 0) {
@@ -638,7 +636,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const overallGpa = totalSks > 0 ? (totalWeightedPoints / totalSks) : 0.0;
           elStudentDisplayGpa.textContent = overallGpa.toFixed(2);
           
-          // GPA summary row at the end
           const summaryRow = document.createElement("tr");
           summaryRow.className = "gpa-summary-row";
           summaryRow.innerHTML = `
@@ -664,35 +661,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // VIEW: SETTINGS ACTIONS
   // ==========================================
   const elSettingsGasUrl = document.getElementById("settings-gas-url");
-  const elBtnSaveSettings = document.getElementById("btn-save-settings");
   const elBtnInitDb = document.getElementById("btn-init-db");
   const elSettingsStatus = document.getElementById("settings-status");
-
+ 
   function loadSettingsView() {
     elSettingsGasUrl.value = AcademicAPI.getGasUrl();
     elSettingsStatus.classList.add("hidden");
   }
-
-  elBtnSaveSettings.addEventListener("click", () => {
-    const url = elSettingsGasUrl.value.trim();
-    AcademicAPI.setGasUrl(url);
-    
-    if (url) {
-      showToast("Koneksi Google Sheets disimpan!");
-      elSettingsStatus.className = "alert alert-info";
-      elSettingsStatus.innerHTML = `<i class="fa-solid fa-link"></i> Terhubung ke Google Sheets API. Klik <strong>Inisialisasi Google Sheet</strong> jika spreadsheet masih baru.`;
-      elSettingsStatus.classList.remove("hidden");
-    } else {
-      showToast("Kembali menggunakan Mock Database (localStorage).");
-      elSettingsStatus.className = "alert alert-info";
-      elSettingsStatus.innerHTML = `<i class="fa-solid fa-database"></i> Menjalankan database lokal offline (localStorage).`;
-      elSettingsStatus.classList.remove("hidden");
-    }
-    
-    if (currentUser) {
-      loadDashboardStats();
-    }
-  });
 
   elBtnInitDb.addEventListener("click", async () => {
     setLoader(true, "Menginisialisasi Spreadsheet...");
@@ -703,7 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.success) {
         showToast("Spreadsheet berhasil diinisialisasi!");
         elSettingsStatus.className = "alert alert-info";
-        elSettingsStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> Database di spreadsheet berhasil disiapkan. Kredensial default (admin, dosen, mhs) telah diinput.`;
+        elSettingsStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> Database di spreadsheet berhasil disiapkan. Kredensial Admin default telah dimasukkan.`;
         elSettingsStatus.classList.remove("hidden");
       } else {
         showToast("Gagal menginisialisasi spreadsheet.", "error");
