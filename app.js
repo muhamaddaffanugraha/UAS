@@ -74,6 +74,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // Update active class on mobile bottom nav items
+    document.querySelectorAll(".mobile-nav-item").forEach(item => {
+      if (item.getAttribute("data-view") === viewId) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
+      }
+    });
+
     // Refresh view specific data
     refreshViewData(viewId);
   }
@@ -165,12 +174,27 @@ document.addEventListener("DOMContentLoaded", () => {
     elSidebarUserPhoto.src = user.photoUrl || defaultAvatar;
     elSidebarUserName.textContent = user.name;
     
+    // Set Welcome Banner Info (matches user image design)
+    const elBannerUserPhoto = document.getElementById("banner-user-photo");
+    const elBannerUserName = document.getElementById("banner-user-name");
+    if (elBannerUserPhoto) elBannerUserPhoto.src = user.photoUrl || defaultAvatar;
+    if (elBannerUserName) elBannerUserName.textContent = user.name;
+
+    // Reset Mobile Nav groups
+    const navAdmin = document.getElementById("mobile-nav-admin");
+    const navDosen = document.getElementById("mobile-nav-dosen");
+    const navMahasiswa = document.getElementById("mobile-nav-mahasiswa");
+    if (navAdmin) navAdmin.classList.add("hidden");
+    if (navDosen) navDosen.classList.add("hidden");
+    if (navMahasiswa) navMahasiswa.classList.add("hidden");
+
     // Configure layout by Role (adm, dsn, mhs)
     if (user.role === "adm") {
       elSidebarUserRole.textContent = "Administrator";
       elMenuAdminSection.classList.remove("hidden");
       elMenuDosenSection.classList.add("hidden");
       elMenuMahasiswaSection.classList.add("hidden");
+      if (navAdmin) navAdmin.classList.remove("hidden");
       
       showView("dashboard");
     } else if (user.role === "dsn") {
@@ -178,6 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
       elMenuAdminSection.classList.add("hidden");
       elMenuDosenSection.classList.remove("hidden");
       elMenuMahasiswaSection.classList.add("hidden");
+      if (navDosen) navDosen.classList.remove("hidden");
       
       showView("dosen-profile");
     } else {
@@ -185,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       elMenuAdminSection.classList.add("hidden");
       elMenuDosenSection.classList.add("hidden");
       elMenuMahasiswaSection.classList.remove("hidden");
+      if (navMahasiswa) navMahasiswa.classList.remove("hidden");
       
       showView("student-dashboard");
     }
@@ -257,9 +283,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const row = document.createElement("tr");
           const photo = d.photoUrl ? d.photoUrl : defaultAvatar;
           row.innerHTML = `
-            <td><img class="table-user-thumb" src="${photo}" alt="Lecturer Thumb" onerror="this.src='${defaultAvatar}'"></td>
-            <td><strong>${escapeHTML(d.nidn)}</strong></td>
-            <td>${escapeHTML(d.name)}</td>
+            <td data-label="Foto"><img class="table-user-thumb" src="${photo}" alt="Lecturer Thumb" onerror="this.src='${defaultAvatar}'"></td>
+            <td data-label="NIDN"><strong>${escapeHTML(d.nidn)}</strong></td>
+            <td data-label="Nama Dosen">${escapeHTML(d.name)}</td>
           `;
           elTableDosensBody.appendChild(row);
         });
@@ -315,10 +341,10 @@ document.addEventListener("DOMContentLoaded", () => {
           const row = document.createElement("tr");
           const photo = s.photoUrl ? s.photoUrl : defaultAvatar;
           row.innerHTML = `
-            <td><img class="table-user-thumb" src="${photo}" alt="Student Thumb" onerror="this.src='${defaultAvatar}'"></td>
-            <td><strong>${escapeHTML(s.nim)}</strong></td>
-            <td>${escapeHTML(s.name)}</td>
-            <td>${escapeHTML(s.major)}</td>
+            <td data-label="Foto"><img class="table-user-thumb" src="${photo}" alt="Student Thumb" onerror="this.src='${defaultAvatar}'"></td>
+            <td data-label="NIM"><strong>${escapeHTML(s.nim)}</strong></td>
+            <td data-label="Nama Mahasiswa">${escapeHTML(s.name)}</td>
+            <td data-label="Jurusan">${escapeHTML(s.major)}</td>
           `;
           elTableStudentsBody.appendChild(row);
         });
@@ -395,10 +421,10 @@ document.addEventListener("DOMContentLoaded", () => {
         res.courses.forEach(c => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td><strong>${escapeHTML(c.courseCode)}</strong></td>
-            <td>${escapeHTML(c.courseName)}</td>
-            <td class="sks-cell">${c.sks} SKS</td>
-            <td>${escapeHTML(c.lecturer)}</td>
+            <td data-label="Kode"><strong>${escapeHTML(c.courseCode)}</strong></td>
+            <td data-label="Mata Kuliah">${escapeHTML(c.courseName)}</td>
+            <td data-label="SKS" class="sks-cell">${c.sks} SKS</td>
+            <td data-label="Dosen Pengampu">${escapeHTML(c.lecturer)}</td>
           `;
           elTableCoursesBody.appendChild(row);
         });
@@ -467,9 +493,9 @@ document.addEventListener("DOMContentLoaded", () => {
           myCourses.forEach(c => {
             const row = document.createElement("tr");
             row.innerHTML = `
-              <td><strong>${escapeHTML(c.courseCode)}</strong></td>
-              <td>${escapeHTML(c.courseName)}</td>
-              <td class="sks-cell">${c.sks} SKS</td>
+              <td data-label="Kode Matkul"><strong>${escapeHTML(c.courseCode)}</strong></td>
+              <td data-label="Nama Mata Kuliah">${escapeHTML(c.courseName)}</td>
+              <td data-label="SKS" class="sks-cell">${c.sks} SKS</td>
             `;
             elTableDosenCoursesBody.appendChild(row);
           });
@@ -553,11 +579,11 @@ document.addEventListener("DOMContentLoaded", () => {
               scoreText = `${scoreNum} (${letter})`;
             }
             row.innerHTML = `
-              <td>${escapeHTML(g.nim)}</td>
-              <td>${escapeHTML(g.name)}</td>
-              <td>${escapeHTML(g.courseName)}</td>
-              <td><strong class="badge ${getGradeBadgeClass(getLetterFromScore(scoreNum))}">${scoreText}</strong></td>
-              <td>${ipkVal}</td>
+             <td data-label="NIM">${escapeHTML(g.nim)}</td>
+             <td data-label="Nama Mahasiswa">${escapeHTML(g.name)}</td>
+             <td data-label="Mata Kuliah">${escapeHTML(g.courseName)}</td>
+             <td data-label="Nilai"><strong class="badge ${getGradeBadgeClass(getLetterFromScore(scoreNum))}">${scoreText}</strong></td>
+             <td data-label="IPK Keseluruhan">${ipkVal}</td>
             `;
             elTableGradesBody.appendChild(row);
           });
@@ -783,12 +809,12 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const row = document.createElement("tr");
             row.innerHTML = `
-              <td><strong>${escapeHTML(g.courseCode)}</strong></td>
-              <td>${escapeHTML(g.courseName)}</td>
-              <td class="sks-cell">${g.sks} SKS</td>
-              <td>${escapeHTML(g.lecturer)}</td>
-              <td><span class="badge ${getGradeBadgeClass(letter)}">${scoreNum} (${letter})</span></td>
-              <td>${weight.toFixed(1)}</td>
+              <td data-label="Kode Matkul"><strong>${escapeHTML(g.courseCode)}</strong></td>
+              <td data-label="Mata Kuliah">${escapeHTML(g.courseName)}</td>
+              <td data-label="SKS" class="sks-cell">${g.sks} SKS</td>
+              <td data-label="Dosen Pengampu">${escapeHTML(g.lecturer)}</td>
+              <td data-label="Nilai Huruf"><span class="badge ${getGradeBadgeClass(letter)}">${scoreNum} (${letter})</span></td>
+              <td data-label="Bobot">${weight.toFixed(1)}</td>
             `;
             elTableStudentKhsBody.appendChild(row);
           });
@@ -908,6 +934,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Bind Sidebar Navigation Clicks
   elMenuItems.forEach(item => {
+    item.addEventListener("click", () => {
+      const view = item.getAttribute("data-view");
+      if (view) {
+        showView(view);
+      }
+    });
+  });
+
+  // Bind Mobile Bottom Navigation Clicks
+  document.querySelectorAll(".mobile-nav-item").forEach(item => {
     item.addEventListener("click", () => {
       const view = item.getAttribute("data-view");
       if (view) {
