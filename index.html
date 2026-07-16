@@ -49,6 +49,8 @@
 
   <!-- Main Application Wrapper (Sidebar + Content) -->
   <div id="app-view" class="app-container hidden">
+    <!-- Sidebar Backdrop (mobile overlay) -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="sidebar-brand">
@@ -133,12 +135,16 @@
     <!-- Main Content Area -->
     <main class="content-area">
       
-      <!-- Top Welcome Banner (styled like the uploaded UI design image) -->
+      <!-- Top Topbar (Akademi-style) -->
       <div id="app-header-banner" class="app-header-banner">
         <div class="banner-overlay-graphic"></div>
+        <!-- Hamburger for mobile -->
+        <button id="btn-hamburger" class="mobile-menu-toggle" aria-label="Buka Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
         <div class="banner-user-info">
           <div class="banner-avatar-wrap">
-            <img id="banner-user-photo" src="" alt="Avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%2360A5FA\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>'">
+            <img id="banner-user-photo" src="" alt="Avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%234E4DE0\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>'">
           </div>
           <div class="banner-greeting">
             <span>Selamat datang</span>

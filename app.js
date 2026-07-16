@@ -940,9 +940,46 @@ document.addEventListener("DOMContentLoaded", () => {
       const view = item.getAttribute("data-view");
       if (view) {
         showView(view);
+        // Close sidebar on mobile after navigation
+        closeMobileSidebar();
       }
     });
   });
+
+  // Bind Mobile Bottom Navigation Clicks
+  document.querySelectorAll(".mobile-nav-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const view = item.getAttribute("data-view");
+      if (view) {
+        showView(view);
+      }
+    });
+  });
+
+  // ==========================================
+  // MOBILE SIDEBAR TOGGLE
+  // ==========================================
+  const elSidebar = document.querySelector(".sidebar");
+  const elBackdrop = document.getElementById("sidebar-backdrop");
+  const elHamburger = document.getElementById("btn-hamburger");
+
+  function openMobileSidebar() {
+    if (elSidebar) elSidebar.classList.add("open");
+    if (elBackdrop) elBackdrop.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+  function closeMobileSidebar() {
+    if (elSidebar) elSidebar.classList.remove("open");
+    if (elBackdrop) elBackdrop.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  if (elHamburger) {
+    elHamburger.addEventListener("click", openMobileSidebar);
+  }
+  if (elBackdrop) {
+    elBackdrop.addEventListener("click", closeMobileSidebar);
+  }
 
   // Bind Mobile Bottom Navigation Clicks
   document.querySelectorAll(".mobile-nav-item").forEach(item => {
