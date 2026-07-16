@@ -253,6 +253,18 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast("Anda telah keluar dari sistem.");
   });
 
+  // Mobile bottom nav logout buttons
+  ["mobile-btn-logout-admin", "mobile-btn-logout-dosen", "mobile-btn-logout-mahasiswa"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("click", () => {
+        sessionStorage.removeItem("sinilai_user");
+        checkSession();
+        showToast("Anda telah keluar dari sistem.");
+      });
+    }
+  });
+
   // ==========================================
   // VIEW: ADMIN DASHBOARD ACTIONS
   // ==========================================
