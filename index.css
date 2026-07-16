@@ -53,6 +53,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 input, select, textarea, button {
@@ -362,7 +363,6 @@ a {
 .content-area {
   flex: 1;
   margin-left: 260px;
-  min-height: 100vh;
   background-color: var(--bg-main);
   display: flex;
   flex-direction: column;
@@ -878,13 +878,24 @@ tr:last-child td {
     display: none !important;
   }
   
+  /* Remove flex height lock on app-container so body scrolls naturally */
+  .app-container {
+    min-height: unset;
+    display: block;
+  }
+
   /* Main area occupies full screen */
   .content-area {
     margin-left: 0 !important;
     min-height: unset;
     height: auto;
-    overflow-y: auto;
-    padding-bottom: 90px; /* Space above bottom nav bar */
+    overflow-y: unset; /* Let body scroll naturally */
+    padding-bottom: 0;
+  }
+
+  /* Add bottom padding to body so fixed nav doesn't cover content */
+  body.app-active {
+    padding-bottom: 90px;
   }
 
   /* Header banner fits mobile screen ratios */

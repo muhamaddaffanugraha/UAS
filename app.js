@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       elLoginView.classList.remove("hidden");
       elAppView.classList.add("hidden");
+      document.body.classList.remove("app-active");
       currentUser = null;
     }
   }
@@ -169,6 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loginSuccess(user) {
     elLoginView.classList.add("hidden");
     elAppView.classList.remove("hidden");
+    document.body.classList.add("app-active");
     
     // Set Sidebar User Info
     elSidebarUserPhoto.src = user.photoUrl || defaultAvatar;
