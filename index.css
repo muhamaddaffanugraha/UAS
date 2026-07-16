@@ -881,7 +881,10 @@ tr:last-child td {
   /* Main area occupies full screen */
   .content-area {
     margin-left: 0 !important;
-    padding-bottom: 85px; /* Prevent navigation overlay */
+    min-height: unset;
+    height: auto;
+    overflow-y: auto;
+    padding-bottom: 90px; /* Space above bottom nav bar */
   }
 
   /* Header banner fits mobile screen ratios */
@@ -904,7 +907,7 @@ tr:last-child td {
     border-top-right-radius: 28px;
     padding: 2.25rem 1.25rem;
     margin-top: -30px;
-    min-height: calc(100vh - 160px);
+    min-height: unset; /* Let content grow naturally so page scrolls */
   }
 
   /* Stat cards convert to compact columns */
